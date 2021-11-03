@@ -8,10 +8,16 @@ file_arg="${@: -1}"
 
 digitregex="[[:digit:]]+"
 
+if [[ $1 == "status" ]] ; then
+	keep_colors="-c color.status=always"
+else
+	keep_color=""
+fi
+
 # only instrument some specific commands. Otherwise forward as-is to git.
 if [[ $1 == "add" || $1 == "status" || $1 == "checkout" || $1 == "reset" || $1 == "diff" ]] ; then
 	# we pipe a git status into awk to add some line numbers
-	$GIT_PATH status | awk '\
+	$GIT_PATH $keep_colors status | awk '\
 		BEGIN {i = 1; to_add = 0}
 		{print i "\t" $0 ; i += 1}\
 		# mapping is displayed if git status was called by user
