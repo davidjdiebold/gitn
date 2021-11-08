@@ -14,23 +14,18 @@ else
 	keep_color=""
 fi
 
+
 # only instrument some specific commands. Otherwise forward as-is to git.
-if [[ $1 == "add" || $1 == "status" || $1 == "checkout" || $1 == "reset" || $1 == "diff" ]] ; then
-	# we pipe a git status into awk to add some line numbers
-	$GIT_PATH $keep_colors status | awk '\
-		BEGIN {i = 1; to_add = 0}
-		{print i "\t" $0 ; i += 1}\
-		# mapping is displayed if git status was called by user
-		'\ | if [[ $1 == "status" ]] ; then
-		 	cat
-		   else
-		 	if [[ $file_arg =~ $digitregex ]] ; then
-				# number provided by user is matched against the mapping to provide the file to the command
-				awk  -v pattern="^$file_arg\$" '$1 ~ pattern {print $(NF)}' | xargs $GIT_PATH $1 $other_args
-			else
-				awk  -v pattern="^$file_arg\$" '$(NF) ~ pattern {print $(NF)}' | xargs $GIT_PATH $1 $other_args
-			fi
-		   fi
-else
-	$GIT_PATH "$@"
-fi
+[[ "$1" =~ "status" && ! "$file_arg" =~ "$digitregex" ]] || { $GIT_PATH "$@" ; exit 0 ; }
+
+# we pipe a git status into awk to add some line numbers
+$GIT_PATH $keep_colors status | awk '\
+	BEGIN {i = 1; to_add = 0}
+	{print i "\t" $0 ; i += 1}\
+	# mapping is displayed if git status was called by user
+	'\ | if [[ $1 == "status" ]] ; then
+	 	cat
+	   else
+		# number provided by user is matched against the mapping to provide the file to the command
+		awk  -v pattern="^$file_arg\$" '$1 ~ pattern {print $(NF)}' | xargs $GIT_PATH $1 $other_args
+	   fi
